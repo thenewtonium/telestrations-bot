@@ -640,8 +640,10 @@ async def move_on (user,skipped):
 			users[user.id]["pile"][0]["players"].pop(users[user.id]["pile"][0]["current_pindex"])
 		else:
 			users[user.id]["pile"][0]["current_pindex"] = nextpi # important for the book to know who currently has it
-		
-		users[p_n_id]["pile"].append(users[user.id]["pile"][0]) # add book to next player's pile
+
+		# don't move initial prompt when skipped.
+		if len(users[user.id]["pile"][0]["content"]) > 0:
+			users[p_n_id]["pile"].append(users[user.id]["pile"][0]) # add book to next player's pile
 		users[user.id]["pile"].pop(0) # remove book from current player's pile.
 		
 		# give the current player, and the player we just transferred a book to, their tasks, if they are waiting. 
