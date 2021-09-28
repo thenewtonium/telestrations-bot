@@ -35,9 +35,6 @@ client = commands.Bot(command_prefix='t!',intents=intents)
 users = {}
 
 # list of the ids of signup sheet messages, and a dict of the corresponding hosts keyed by those ids.
-signup_sheets = [889503997872984074,889085567587975259,890188623230668870,890535271798566912,890381310206550036]
-hosts = {889503997872984074:282853440487424001,889085567587975259:282853440487424001,890188623230668870:282853440487424001,890535271798566912:282853440487424001,890381310206550036:282853440487424001}
-
 results_lock = False
 
 MAX_PILE = 20
@@ -58,17 +55,31 @@ def save(users):
 		pickle.dump(users, f)
 	#print(users, "saved to file.")
 
+def save_signups(hosts):
+	with open("telestrations-signups.dat", 'wb') as f:
+		pickle.dump(hosts,f)
+
+try:
+	with open("telestrations3.dat", 'rb') as f:
+		users = pickle.load(f)
+except Exception as e:
+	users = {}
+	print(e)
+	save(users)
+
+try:
+	with open("telestrations-signups.dat", 'rb') as f:
+		hosts = pickle.load(f)
+except Exception as e:
+	hosts = {892171604249939968:282853440487424001}
+	print(e)
+	save_signups(hosts)
+
 # when the bot boots up, load all the game data from file.
 @client.event
 async def on_ready():
 	global users
-	try:
-		with open("telestrations3.dat", 'rb') as f:
-			users = pickle.load(f)
-	except Exception as e:
-		users = {}
-		print(e)
-		save(users)
+
 	print("ready")
 	
 	while True:
@@ -244,7 +255,6 @@ Traditionally, letters and numbers aren't allowed in Telestrations, but personal
 @client.event
 async def on_message(msg):
 	global users
-	global signup_sheets
 	global hosts
 	
 	# ignore messages by the bot itself
@@ -304,7 +314,6 @@ async def on_message(msg):
 		await signup.add_reaction("▶")
 		
 		# record that this signup sheet exists, and also who requested its creation.
-		signup_sheets.append(signup.id)
 		hosts[signup.id] = msg.author.id
 		
 		return
@@ -499,7 +508,6 @@ If you can't think of one, you may want to use https://www.wordgenerator.net/pic
 @client.event
 async def on_raw_reaction_add(payload):
 	global users
-	global signup_sheets
 	global hosts
 	
 	user = await client.fetch_user(payload.user_id)
@@ -536,13 +544,13 @@ async def on_raw_reaction_add(payload):
 		return
 	
 	# prevent signups when too many tasks
-	elif str(reaction) == "✅" and msg.id in signup_sheets:
+	elif str(reaction) == "✅" and msg.id in hosts.keys():
 		if len(users[user.id]["pile"]) > MAX_PILE and hosts[msg.id] != user.id:
 			await msg.remove_reaction("✅",user)
 			await user.send(content=f"_You were removed from the signup sheet as you have over {MAX_PILE} tasks pending._",delete_after=60)
 	
 	# case where the reaction is to start a game. must be triggered by whoever requested the signup sheet.
-	elif str(reaction) == "▶" and msg.id in signup_sheets and hosts[msg.id] == user.id:
+	elif str(reaction) == "▶" and msg.id in hosts.keys() and hosts[msg.id] == user.id:
 		# find all the users who agreed to play the game.
 		# I'm going off the assumption that the first reaction will always be the tick reaction,
 		# since the bot adds this immediately after the message is sent.
@@ -560,12 +568,11 @@ async def on_raw_reaction_add(payload):
 			mentions += f"{host_usr.mention} "
 		
 		# if too few players don't start
-		if len(players) < 3:
-			await host_usr.send(content="_You can't start a game of telestrations with fewer than 3 players._", delete_after=10)
+		if len(players) < 5:
+			await host_usr.send(content="_Minimum player threshold has been set at 5._", delete_after=10)
 			return
 		
-		# delete the signup sheet; first from the list of signup sheets and dict of hosts, then from discord.
-		signup_sheets.remove(msg.id)
+		# delete the signup sheet; first from the dict of hosts, then from discord.
 		hosts.pop(msg.id)
 		
 		try:
