@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 # discord stuff; commands module isn't really necessary but I cba to look up how to start the bot normally.
+import datetime
+
 import discord
 from discord.ext import commands
 
@@ -343,7 +345,7 @@ async def on_message(msg):
 		if msg.author.id == 120125811259998208:
 			await msg.channel.send ("Rebooting Telestrations...")
 			await client.close()
-			file_path = os.path.abspath(__file__)
+			file_path = os.path.relpath(__file__)
 			os.system("nohup python3 -u \""+file_path+"\" &")
 			sys.exit()
 	elif case_ins_msg == "t!shutdown":
@@ -536,6 +538,16 @@ async def on_raw_reaction_add(payload):
 		# also record that they are the author of this content.
 		users[user.id]["pile"][0]["content"].append(users[user.id]["to_confirm"])
 		users[user.id]["pile"][0]["authors"].append(user.id)
+
+		if not ("timestamps" in users[user.id]["pile"][0].keys()):
+			users[user.id]["pile"][0]["timestamps"] = {}
+
+		try:
+			ind = len(users[user.id]["pile"][0]["content"]) - 1
+			users[user.id]["pile"][0]["timestamps"][ind] = datetime.datetime.utcnow()
+		except Exception as e:
+			print("Whilest trying to set timestamp:", e)
+
 		
 		# move the player's current book to the next player,
 		# or finish the game if there isn't one.
@@ -683,15 +695,21 @@ async def disp_results (book):
 	for media in book["content"]:
 		usr = await client.fetch_user(book["authors"][r])
 		mentions+= f"{usr.mention} "
-		
+
+		try:
+			ts = book["timestamps"][r]
+		except Exception as e:
+			print("Whilest determining timestamp of action:",e)
+			ts = discord.Embed.Empty
+
 		# as usual there are three cases for the text.
 		if r == 0:
-			embed=discord.Embed(description=f"<@{usr.id}> gave the secret word **{media}**")
+			embed=discord.Embed(description=f"<@{usr.id}> gave the secret word **{media}**",timestamp=ts)
 		elif r%2 == 0:
 			#act = "guessed"
-			embed=discord.Embed(description=f"<@{usr.id}> guessed **{media}**")
+			embed=discord.Embed(description=f"<@{usr.id}> guessed **{media}**",timestamp=ts)
 		else:
-			embed=discord.Embed(description=f"<@{usr.id}> drew")
+			embed=discord.Embed(description=f"<@{usr.id}> drew",timestamp=ts)
 			embed.set_image(url=media)
 			
 		embed.set_author(name=f"{usr.name}#{usr.discriminator}",icon_url=usr.avatar_url,url=f"https://discordapp.com/users/{usr.id}")
