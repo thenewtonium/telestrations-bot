@@ -428,7 +428,11 @@ async def on_message(msg):
 				users[p_c.id]["to_confirm"] = msg.attachments[0].url
 				#act = "drawing"
 				embed=discord.Embed(title="Confirm drawing",description=f"React ✅ to this message to confirm you wish to submit the drawing")
-				embed.set_author(name=users[p_c.id]["pile"][0]["content"][-1])
+				pmpt = users[p_c.id]["pile"][0]["content"][-1]
+				if len(pmpt) > 256:
+					ext = "[...]"
+					pmpt = pmpt[0:255-len(ext)] + ext
+				embed.set_author(name=pmpt)
 				embed.set_image(url=users[p_c.id]["to_confirm"])
 			# `act` is actually meant to be a noun.
 			
