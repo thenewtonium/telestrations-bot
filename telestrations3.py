@@ -317,7 +317,8 @@ async def on_message(msg):
 		
 		# record that this signup sheet exists, and also who requested its creation.
 		hosts[signup.id] = msg.author.id
-		
+		save_signups(hosts)
+
 		return
 		
 	# command to list the number of tasks people have.
