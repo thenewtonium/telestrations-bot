@@ -516,9 +516,12 @@ If you can't think of one, you may want to use https://www.wordgenerator.net/pic
 async def on_raw_reaction_add(payload):
 	global users
 	global hosts
-	
-	user = await client.fetch_user(payload.user_id)
+
 	chan = await client.fetch_channel(payload.channel_id)
+	if chan.type is discord.ChannelType.private:
+		user = await client.fetch_user(payload.user_id)
+	else:
+		user = await chan.guild.fetch_member(payload.user_id)
 	msg = await chan.fetch_message(payload.message_id)
 	
 	reaction = payload.emoji
