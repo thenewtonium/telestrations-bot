@@ -73,7 +73,7 @@ try:
 	with open("telestrations-signups.dat", 'rb') as f:
 		hosts = pickle.load(f)
 except Exception as e:
-	hosts = {892171604249939968:282853440487424001}
+	hosts = {}
 	print(e)
 	save_signups(hosts)
 
@@ -567,7 +567,7 @@ async def on_raw_reaction_add(payload):
 			await user.send(content=f"_You were removed from the signup sheet as you have over {MAX_PILE} tasks pending._",delete_after=60)
 	
 	# case where the reaction is to start a game. must be triggered by whoever requested the signup sheet.
-	elif str(reaction) == "▶" and msg.id in hosts.keys() and hosts[msg.id] == user.id:
+	elif str(reaction) == "▶" and msg.id in hosts.keys() and (user.guild_permissions.administrator or hosts[msg.id] == user.id):
 		# find all the users who agreed to play the game.
 		# I'm going off the assumption that the first reaction will always be the tick reaction,
 		# since the bot adds this immediately after the message is sent.
